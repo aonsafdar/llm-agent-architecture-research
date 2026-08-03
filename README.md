@@ -1,8 +1,7 @@
 # Supplementary materials
 
-This archive accompanies the experience-report paper "Deploying a Single
-Language-Model Agent as an Autonomous Researcher: A Long-Horizon
-Agentic-Workflow Experience Report".
+This archive accompanies the experience-report paper "Long-Horizon Autonomous
+Architecture Research with a Language-Model Agent: A Behavioural Case Study".
 
 It contains everything needed to audit the per-hypothesis trace described in
 the paper and to regenerate every figure and table, together with a compiled
