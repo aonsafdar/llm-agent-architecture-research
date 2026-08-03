@@ -1,0 +1,32 @@
+#!/bin/bash
+# Submit a Slurm job and set up an auto-nudge that sends "continue" to the
+# the agent agent tmux session when the job finishes.
+# Usage: source slurm/submit_and_wait.sh [sbatch args...]
+set -euo pipefail
+
+TMUX_SESSION="${TMUX_TARGET:-autoresearch}"
+JOBID=$(sbatch --parsable "$@")
+LOGFILE="logs/cpvit-minimal-${JOBID}.out"
+
+echo "[submit_and_wait] Job $JOBID submitted."
+echo "[submit_and_wait] Auto-nudge watcher started in background."
+echo "[submit_and_wait] When job finishes → 'continue' will be sent to tmux session '$TMUX_SESSION'."
+
+# Background watcher: poll squeue, then nudge the agent.
+# Uses nohup + redirect so the watcher survives even if the parent shell exits
+# (which happens when the CLI agent backgrounds/times out the command).
+nohup bash -c "
+    while squeue -h -j $JOBID 2>/dev/null | grep -q $JOBID; do
+        sleep 60
+    done
+    RESULT=\"\"
+    if [[ -f $LOGFILE ]]; then
+        RESULT=\$(grep 'Max accuracy' $LOGFILE 2>/dev/null | tail -1 || true)
+    fi
+    sleep 5
+    tmux send-keys -t $TMUX_SESSION \"Job $JOBID finished. \$RESULT — Parse results, update notes, commit or discard, then continue. Read RESEARCH_BRIEF.md — epoch policy changed.\" Enter
+" > /dev/null 2>&1 &
+disown
+
+echo "[submit_and_wait] Job ID: $JOBID"
+echo "[submit_and_wait] Log: $LOGFILE"

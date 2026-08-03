@@ -1,0 +1,97 @@
+#!/bin/bash
+#SBATCH --job-name=cpvit-minimal
+#SBATCH --partition=gpu-partition
+#SBATCH --gres=gpu:2
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=32
+#SBATCH --time=3-00:00:00
+#SBATCH --output=logs/%x-%j.out
+#SBATCH --error=logs/%x-%j.err
+#SBATCH --constraint="ACCELERATOR_CONSTRAINT"
+
+# ============================================================================
+# channel-primary ViT 2-GPU — Phase 3 ImageNet-1K 100ep screening (any accelerator).
+#
+# Allocation policy: up to 4 GPUs/user, 2 GPUs/node. For 100ep
+# screening prefer lower-tier accelerators for screening. Reserve top-tier accelerators for 300ep
+# champion validation (e.g. job 349012).
+#
+# Usage:
+#   CFG=configs/autoresearch_experiment.yaml \
+#   RUN_TAG=in_h3_X_xxx \
+#   sbatch --export=ALL,CFG,RUN_TAG slurm/cpvit_2gpu.slurm
+#
+# To pin to a specific GPU type:
+#   sbatch --constraint="lower-tier" --export=ALL,CFG,RUN_TAG slurm/cpvit_2gpu.slurm
+#
+# Job name stays "cpvit-minimal" so the standalone watcher
+# (slurm/job_watcher.sh) picks it up.
+# ============================================================================
+
+set -eo pipefail
+
+REPO_DIR="${REPO_DIR:-${SLURM_SUBMIT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}}"
+CONDA_ENV="${CONDA_ENV:-/path/to/conda-env}"
+
+CFG="${CFG:-configs/autoresearch_experiment.yaml}"
+DATA_DIR="${DATA_DIR:-/path/to/imagenet}"
+BATCH_SIZE="${BATCH_SIZE:-256}"   # per-GPU; 2×256 = 512 global
+RUN_TAG="${RUN_TAG:-cpvit-2gpu-$(date +%s)}"
+OPTS="${OPTS:-}"
+
+echo "[$(date)] REPO_DIR=$REPO_DIR"
+echo "[$(date)] DATA_DIR=$DATA_DIR"
+echo "[$(date)] CFG=$CFG  RUN_TAG=$RUN_TAG  BS/GPU=$BATCH_SIZE"
+
+if [[ ! -f "$REPO_DIR/main.py" ]]; then
+  echo "ERROR: main.py not found under $REPO_DIR" >&2; exit 2
+fi
+if [[ ! -d "$DATA_DIR" ]]; then
+  echo "ERROR: DATA_DIR does not exist: $DATA_DIR" >&2; exit 3
+fi
+
+module load anaconda3/YYYY.MM-N
+source /path/to/conda
+conda activate "$CONDA_ENV"
+
+if [[ -x "$CONDA_ENV/bin/python" ]]; then
+  export PATH="$CONDA_ENV/bin:$PATH"
+  PYTHON="$CONDA_ENV/bin/python"
+else
+  PYTHON="$(which python)"
+fi
+echo "Using PYTHON=$PYTHON"
+
+"$PYTHON" -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available(), 'devs', torch.cuda.device_count())"
+
+cd "$REPO_DIR"
+
+export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-16}"
+export PYTHONUNBUFFERED=1
+export TORCH_CPP_LOG_LEVEL=WARNING
+export TORCH_DISTRIBUTED_DEBUG=OFF
+export NCCL_DEBUG=WARN
+export CUDA_LAUNCH_BLOCKING=0
+
+export WANDB=${WANDB:-1}
+export WANDB_PROJECT=${WANDB_PROJECT:-anon-project}
+export WANDB_NAME=${WANDB_NAME:-$RUN_TAG}
+export WANDB_DIR=${WANDB_DIR:-$REPO_DIR/output}
+export WANDB_CONSOLE=${WANDB_CONSOLE:-redirect}
+export WANDB_CAPTURE_LOG=${WANDB_CAPTURE_LOG:-true}
+export WANDB_RUN_GROUP=${WANDB_RUN_GROUP:-$SLURM_JOB_NAME}
+
+mkdir -p logs output
+
+nvidia-smi || true
+
+# main.py reads --local_rank from LOCAL_RANK env var (set by torchrun per-child)
+"$PYTHON" -m torch.distributed.run --standalone --nproc_per_node=2 \
+  main.py \
+  --cfg "$CFG" \
+  --data-path "$DATA_DIR" \
+  --batch-size "$BATCH_SIZE" \
+  --tag "$RUN_TAG" \
+  ${OPTS}
+
+echo "[$(date)] Done: $RUN_TAG"

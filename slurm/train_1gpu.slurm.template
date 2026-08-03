@@ -1,0 +1,107 @@
+#!/bin/bash
+#SBATCH --job-name=cpvit-minimal
+#SBATCH --partition=gpu-partition
+#SBATCH --gres=gpu:1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=32
+#SBATCH --time=10-00:00:00
+#SBATCH --output=logs/%x-%j.out
+#SBATCH --error=logs/%x-%j.err
+#SBATCH --constraint="ACCELERATOR_CONSTRAINT"
+
+# ============================================================================
+# channel-primary ViT minimal — trains configs/cpvit_minimal.yaml (channel-primary, CIFAR-10).
+# Agent starting point: copy that YAML to configs/autoresearch_experiment.yaml
+# and point CFG there, or override CFG / RUN_TAG / OPTS below.
+#
+# Usage:
+#   sbatch slurm/cpvit_minimal.slurm
+#   CFG=configs/autoresearch_experiment.yaml RUN_TAG=exp1 sbatch slurm/cpvit_minimal.slurm
+# Agents: capture JOBID from sbatch, wait until job leaves squeue, then parse logs / W&B before the next run.
+#   OPTS='--opts TRAIN.EPOCHS 10' sbatch --export=ALL,CFG,RUN_TAG,OPTS slurm/cpvit_minimal.slurm  # smoke only
+# ============================================================================
+
+set -eo pipefail
+
+REPO_DIR="${REPO_DIR:-${SLURM_SUBMIT_DIR:-$(cd "$(dirname "$0")/.." && pwd)}}"
+CONDA_ENV="${CONDA_ENV:-/path/to/conda-env}"
+
+CFG="${CFG:-configs/cpvit_minimal.yaml}"
+DATA_DIR="${DATA_DIR:-$REPO_DIR/data/cifar10}"
+BATCH_SIZE="${BATCH_SIZE:-128}"
+RUN_TAG="${RUN_TAG:-cpvit-minimal}"
+OPTS="${OPTS:-}"
+
+echo "[$(date)] REPO_DIR=$REPO_DIR"
+echo "[$(date)] DATA_DIR=$DATA_DIR"
+echo "[$(date)] CFG=$CFG  RUN_TAG=$RUN_TAG"
+
+if [[ ! -d "$REPO_DIR" ]]; then
+  echo "ERROR: REPO_DIR does not exist: $REPO_DIR" >&2; exit 1
+fi
+if [[ ! -f "$REPO_DIR/main.py" ]]; then
+  echo "ERROR: main.py not found under $REPO_DIR" >&2; exit 2
+fi
+
+module load anaconda3/YYYY.MM-N
+source /path/to/conda
+conda activate "$CONDA_ENV"
+
+if [[ -x "$CONDA_ENV/bin/python" ]]; then
+  export PATH="$CONDA_ENV/bin:$PATH"
+  PYTHON="$CONDA_ENV/bin/python"
+else
+  PYTHON="$(which python)"
+fi
+echo "Using PYTHON=$PYTHON"
+
+"$PYTHON" -c "import torch; print('torch', torch.__version__); import timm; print('timm', timm.__version__)"
+
+cd "$REPO_DIR"
+
+export OMP_NUM_THREADS="$SLURM_CPUS_PER_TASK"
+export PYTHONUNBUFFERED=1
+export TORCH_CPP_LOG_LEVEL=WARNING
+export TORCH_DISTRIBUTED_DEBUG=OFF
+export NCCL_DEBUG=WARN
+export CUDA_LAUNCH_BLOCKING=0
+
+# W&B: set WANDB=0 to disable. Login once on login node: wandb login
+export WANDB=${WANDB:-1}
+export WANDB_PROJECT=${WANDB_PROJECT:-anon-project}
+export WANDB_NAME=${WANDB_NAME:-$RUN_TAG}
+export WANDB_DIR=${WANDB_DIR:-$REPO_DIR/output}
+export WANDB_CONSOLE=${WANDB_CONSOLE:-redirect}
+export WANDB_CAPTURE_LOG=${WANDB_CAPTURE_LOG:-true}
+export WANDB_RUN_GROUP=${WANDB_RUN_GROUP:-$SLURM_JOB_NAME}
+
+mkdir -p logs output
+
+nvidia-smi || true
+
+# shellcheck disable=SC2086
+"$PYTHON" -m torch.distributed.run --standalone --nproc_per_node=1 \
+  main.py \
+  --cfg "$CFG" \
+  --local_rank 0 \
+  --data-path "$DATA_DIR" \
+  --batch-size "$BATCH_SIZE" \
+  --tag "$RUN_TAG" \
+  ${OPTS}
+
+BEST_CKPT="output/${RUN_TAG}/checkpoint-best.pth"
+if [[ -f "$BEST_CKPT" ]]; then
+  echo "Evaluating best checkpoint: $BEST_CKPT"
+  # shellcheck disable=SC2086
+  "$PYTHON" -m torch.distributed.run --standalone --nproc_per_node=1 \
+    main.py \
+    --cfg "$CFG" \
+    --local_rank 0 \
+    --data-path "$DATA_DIR" \
+    --eval \
+    --resume "$BEST_CKPT" \
+    --tag "${RUN_TAG}_eval" \
+    ${OPTS}
+fi
+
+echo "[$(date)] Done: $RUN_TAG"

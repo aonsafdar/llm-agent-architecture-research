@@ -1,0 +1,51 @@
+#!/bin/bash
+# Persistent job watcher — runs in its own tmux window.
+# Tracks ALL cpvit-minimal jobs; sends nudge to the agent when any finishes.
+# Supports multiple concurrent jobs (e.g. CIFAR-100 + ImageNet in parallel).
+# Usage: tmux new-window -t autoresearch -n watcher 'bash slurm/job_watcher.sh'
+
+TMUX_SESSION="autoresearch"
+TMUX_TARGET="autoresearch:0"
+POLL_INTERVAL=60
+
+declare -A TRACKED_JOBS
+
+echo "[watcher] Started. Monitoring for cpvit-minimal jobs."
+
+while true; do
+    # Get all current cpvit-minimal jobs
+    CURRENT_JOBS=$(squeue -u "$(whoami)" --name=cpvit-minimal --format="%i" -h 2>/dev/null)
+
+    # Register new jobs
+    for JOB in $CURRENT_JOBS; do
+        if [[ -z "${TRACKED_JOBS[$JOB]}" ]]; then
+            TRACKED_JOBS[$JOB]="running"
+            echo "[watcher] $(date): Now tracking job $JOB"
+        fi
+    done
+
+    # Check if any tracked job finished
+    for JOB in "${!TRACKED_JOBS[@]}"; do
+        if [[ "${TRACKED_JOBS[$JOB]}" == "running" ]]; then
+            STILL_QUEUED=$(echo "$CURRENT_JOBS" | grep -w "$JOB")
+            if [[ -z "$STILL_QUEUED" ]]; then
+                LOGFILE="logs/cpvit-minimal-${JOB}.out"
+                ACC=""
+                if [[ -f "$LOGFILE" ]]; then
+                    ACC=$(grep "Max accuracy" "$LOGFILE" 2>/dev/null | tail -1 | grep -oP '[0-9]+\.[0-9]+%' | tail -1)
+                fi
+                echo "[watcher] $(date): Job $JOB done. Accuracy: $ACC"
+                TRACKED_JOBS[$JOB]="done"
+
+                sleep 3
+                MSG="Job ${JOB} done, accuracy ${ACC}. Parse results, update notes, commit/discard, then design and submit next hypothesis. Do not stop — run autonomously per RESEARCH_BRIEF.md."
+                tmux send-keys -t "$TMUX_TARGET" -l "$MSG"
+                sleep 0.5
+                tmux send-keys -t "$TMUX_TARGET" Enter
+                echo "[watcher] $(date): Nudge sent for job $JOB."
+            fi
+        fi
+    done
+
+    sleep "$POLL_INTERVAL"
+done

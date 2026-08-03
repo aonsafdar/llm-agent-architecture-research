@@ -1,0 +1,115 @@
+id,phase,acc,delta,outcome,category,change_type,title,status
+Baseline-C10,1,69.67,0.0,baseline,baseline,baseline,CIFAR-10 baseline,
+H1,1,91.08,0.0,success,mlp_ffn,config,"Add CA MLP (CA_MLP_RATIO = [4.0, 4.0, 1.0]",PUSHED
+H2,1,89.97,-1.1099999999999994,failure,mlp_ffn,config,"Stage-2-only CA MLP (CA_MLP_RATIO = [0, 0, 1.0]",DISCARDED
+H3,1,89.95,-1.1299999999999955,failure,attention_heads,config,"Multi-head channel attention (NUM_HEADS = [1, 2, 4]",DISCARDED
+H4,1,91.13,0.04999999999999716,success,depth_topology,config,"Deeper stage-2 backbone (DEPTH = [1, 2, 11]",PUSHED
+H5,1,91.71,0.5799999999999983,success,mlp_ffn,config,"Larger early-stage CA MLP (CA_MLP_RATIO = [8.0, 8.0, 1.0]",PUSHED
+H6,1,92.52,0.8100000000000023,success,shortcut,config,DW shortcut backbone (DW_SHORTCUT_BACKBONE = true,PUSHED
+H7,1,92.98,0.46000000000000796,success,regularization,config,"Remove stochastic depth (DROP_PATH_RATE = [0,0,0]",PUSHED
+H8,1,93.0,0.01999999999999602,success,training_recipe,config,Shorter warmup (WARMUP_EPOCHS = 5,PUSHED
+H9,1,93.77,0.769999999999996,success,training_recipe,config,Higher learning rate (BASE_LR = 1e-3,PUSHED
+H10,1,93.36,-0.4099999999999966,failure,training_recipe,config,Reduce weight decay (WEIGHT_DECAY = 0.01,DISCARDED
+H11,1,93.96,0.18999999999999773,success,training_recipe,config,Push LR further (BASE_LR = 2e-3,PUSHED
+H12,1,93.41,-0.5499999999999972,failure,training_recipe,config,Push LR to 4e-3 (BASE_LR = 4e-3,DISCARDED
+H13,1,94.11,0.15000000000000568,success,other,config,"4-stage architecture (NUM_STAGES=4, DIM_EMBED=[64,128,256,384]",PUSHED
+H14,1,93.98,-0.12999999999999545,failure,depth_topology,config,"4-stage with stage-3 stride=1 (14×14 spatial, PATCH_STRIDE=[4,2,2,1]",DISCARDED
+H15,1,93.79,-0.3199999999999932,failure,depth_topology,config,"Reallocate depth: 1 stage-1 block → 1 stage-3 block (DEPTH=[1,1,3,8]",DISCARDED
+H16,1,93.84,-0.269999999999996,failure,training_recipe,config,Re-tune LR for 4-stage model (BASE_LR = 3e-3,DISCARDED
+H17,1,93.39,-0.7199999999999989,failure,kernel_size,config,"Larger QKV kernel in stages 0-2 (KERNEL_QKV=[5,5,5,3]",DISCARDED
+H18,1,93.47,-0.6400000000000006,failure,patch_embed,config,"dw_sep patch embedding at all 4 stages (PATCH_EMBED_METHOD=['dw_sep','dw_sep','dw_sep','dw_sep']",DISCARDED
+H19,1,93.55,-0.5600000000000023,failure,depth_topology,config,"Deeper stage 0 (DEPTH=[2,2,3,7]",DISCARDED
+H20,1,93.68,-0.4299999999999926,failure,mlp_ffn,config,"DEPTH=[1,2,3,8] + CA_MLP_RATIO=[8,8,3.3,1] (stage-3 depth vs stage-2 MLP tradeoff",DISCARDED
+H21,1,94.79,0.6800000000000068,success,augmentation,config,"Disable Mixup+CutMix (AUG.MIXUP=0, AUG.CUTMIX=0",PUSHED
+H22,1,94.24,-0.5500000000000114,failure,augmentation,config,"Disable all DeiT augmentation (no RandAugment, no RandomErase, no Mixup, no CutMix",DISCARDED
+H23,1,94.92,0.12999999999999545,success,augmentation,config,Disable label smoothing (MODEL.LABEL_SMOOTHING=0.0,PUSHED
+H24,1,94.71,-0.21000000000000796,failure,augmentation,config,Reduce RandomErase probability (REPROB=0.1,DISCARDED
+H25,1,94.96,0.03999999999999204,success,regularization,config,"Mild drop path in deepest stage (DROP_PATH_RATE=[0,0,0,0.05]",PUSHED
+H26,1,94.84,-0.11999999999999034,failure,depth_topology,config,Redistribute depth,DISCARDED
+H27,1,95.06,0.10000000000000853,success,training_recipe,config,Longer warmup (WARMUP_EPOCHS=10,PUSHED
+H28,1,94.99,-0.07000000000000739,failure,training_recipe,config,Even longer warmup (WARMUP_EPOCHS=15,DISCARDED
+H29,1,95.09,0.030000000000001137,success,regularization,config,"Progressive drop path [0, 0.01, 0.02, 0.05]",PUSHED
+H30,1,95.1,0.009999999999990905,success,normalisation,code,"Layer Scale (CaiT-style, init=1e-4",PUSHED
+H31,1,94.98,-0.11999999999999034,failure,other,config,"Attention dropout in stage 3 (ATTN_DROP_RATE=[0,0,0,0.1]",DISCARDED
+H32,1,95.09,-0.009999999999990905,failure,mlp_ffn,config,DW shortcut placed between attention and MLP (DW_SHORTCUT_AFTER_FIRST_RESIDUAL=true,DISCARDED
+H33,1,94.91,-0.18999999999999773,failure,activation,config,SiLU (Swish) activation instead of GELU,DISCARDED
+H34,1,94.99,-0.10999999999999943,failure,training_recipe,config,Higher weight decay (WEIGHT_DECAY=0.1,DISCARDED
+H35,1,95.03,-0.06999999999999318,failure,augmentation,config,Lighter RandAugment (rand-m7,DISCARDED
+H36,1,94.79,-0.30999999999998806,failure,depth_topology,config,"More depth at stage 0 (DEPTH=[2,2,3,7]",DISCARDED
+H37,1,94.83,-0.269999999999996,failure,augmentation,config,Light Mixup (MIXUP=0.2,DISCARDED
+H38,1,94.8,-0.29999999999999716,failure,patch_embed,config,"All-dw_sep patch embedding (['dw_sep','dw_sep','dw_sep','dw_sep']",DISCARDED
+H39,1,94.03,-1.0699999999999932,failure,other,config,Deep pure CA,DISCARDED
+H40,1,94.74,-0.35999999999999943,failure,other,config,AdamW β₂=0.98,DISCARDED
+H41,1,94.98,-0.11999999999999034,failure,normalisation,config,Layer Scale init=1e-5,DISCARDED
+H42,1,94.22,-0.8799999999999955,failure,normalisation,code,QK-Normalize (L2-normalize Q and K before dot product,DISCARDED
+H43,1b,94.97,-0.12999999999999545,failure,position_encoding,code,Learnable Channel Pair Bias (CPB,DISCARDED
+H46,1b,95.7,0.6000000000000085,success,attention_heads,code,Auxiliary deep supervision at stage 2 (intermediate classifier head,PUSHED
+H47,1b,95.82,0.11999999999999034,success,other,code,Per-stage learned attention temperature (log-parameterized scalar τ,PUSHED
+H48,1b,95.75,-0.06999999999999318,failure,attention_variant,code,"Gated attention output (scalar sigmoid gate, channel mode",DISCARDED
+H49,1b,95.71,-0.10999999999999943,failure,shortcut,config,"Larger DW shortcuts (5×5 kernels, uniform across all stages",DISCARDED
+H50,1b,95.85,0.030000000000001137,success,aux_supervision,code,Dual auxiliary deep supervision at stages 1 and 2,PUSHED
+H51,1b,95.95,0.10000000000000853,success,position_encoding,code,Convolutional Position Encoding (CPE) at each stage,PUSHED
+H52,1b,96.11,0.1599999999999966,success,position_encoding,code,Larger CPE kernel (5×5,PUSHED
+H53,1b,95.85,-0.2600000000000051,failure,position_encoding,code,CPE with 7×7 kernel,DISCARDED
+H54,1b,96.23,0.12000000000000455,success,mlp_ffn,code,SwiGLU MLP (replace GELU with SwiGLU gate in CA MLP blocks,PUSHED
+H55,1b,96.24,0.009999999999990905,failure,position_encoding,code,"Per-stage CPE kernel sizes [3, 3, 5, 5]",DISCARDED
+H56,1b,96.48,0.25,success,shortcut,config,"DW shortcut kernel verified [3,3,3,3] on H54 base",PUSHED
+H57,1b,96.25,-0.23000000000000398,failure,normalisation,code,RMSNorm on H56 clean base,DISCARDED
+H58,1b,96.12,-0.35999999999999943,failure,attention_heads,config,"Multi-head channel attention NUM_HEADS [1,2,4,1]",DISCARDED
+H59,1b,96.42,-0.060000000000002274,failure,aux_supervision,code,Stronger auxiliary loss weights,DISCARDED
+H60,1b,96.38,-0.10000000000000853,failure,mlp_ffn,config,"Wider stage 2 MLP (ratio 4→6), fewer blocks (3→2",DISCARDED
+H62,1b,96.37,-0.10999999999999943,failure,depth_topology,config,"Depth redistribution [1,3,3,6]",DISCARDED
+H63,1b,96.2,-0.28000000000000114,failure,normalisation,code,LayerScale 1e-3 (10x larger initial scale,DISCARDED
+H64,1b,96.59,0.10999999999999943,success,aux_supervision,code,Triple auxiliary supervision,PUSHED
+H65,1b,96.48,-0.10999999999999943,failure,aux_supervision,code,Stronger aux weights,DISCARDED
+H67,1b,96.37,-0.21999999999999886,failure,attention_heads,code,Intra-stage-3 mid-block auxiliary head (after block 4 of 7,DISCARDED
+Baseline-C100,2,81.34,0.0,baseline,baseline,baseline,CIFAR-100 baseline (P2-H1),
+P2-H2,2,84.11,0.0,failure,depth_topology,config,Stage-3 depth-width tradeoff,DISCARDED
+P2-H3,2,81.31,0.0,failure,attention_variant,code,Group channel attention (G=4) at stage 3 + deeper network,DISCARDED
+P2-H4,2,81.72,0.0,success,cross_stage,code,Cross-stage channel feature fusion (DuoFormer-inspired,PUSHED
+P2-H5,2,81.12,-0.5999999999999943,failure,regularization,config,"No stochastic depth at 100ep (DROP_PATH=[0,0,0,0]",DISCARDED
+P2-H6,2,82.02,0.29999999999999716,success,augmentation,config,Label smoothing LS=0.1 at 100ep,PUSHED
+P2-H7,2,82.79,0.7700000000000102,success,augmentation,config,Mild Mixup=0.4 at 100ep,PUSHED
+P2-H8,2,81.88,-0.9100000000000108,failure,attention_variant,code,Differential channel attention,DISCARDED
+P2-H9,2,82.8,0.009999999999990905,success,depth_topology,code,Intra-stage-3 mid-block auxiliary supervision,PUSHED
+P2-H10,2,82.88,0.0799999999999983,success,position_encoding,code,Periodic CPE re-injection within stage 3 (interval=4,PUSHED
+P2-H11,2,83.16,0.28000000000000114,success,kernel_size,config,Larger Q/K/V projection kernel at stage 3 (3×3 → 5×5,PUSHED
+P2-H12,2,83.11,-0.04999999999999716,failure,kernel_size,config,Full-field Q/K/V projection kernel at stage 3 (5×5 → 7×7,DISCARDED
+P2-H13,2,82.82,-0.3400000000000034,failure,kernel_size,config,5×5 Q/K/V projection kernel at stage 2 as well,DISCARDED
+P2-H14,2,83.17,0.010000000000005116,success,shortcut,config,5×5 DW shortcut kernel at stage 3,PUSHED
+P2-H15,2,83.18,0.010000000000005116,success,depth_topology,config,Wider stage-3 embedding (576→640) with fewer depth (12→10,PUSHED
+P2-H16,2,82.72,-0.46000000000000796,failure,depth_topology,code,Cross-stage spatial input fusion (stage-2 features → stage-3 input,DISCARDED
+P2-H17,2,82.98,-0.20000000000000284,failure,attention_variant,code,Grouped channel attention at stage 3 (G=4 groups of 160 channels,DISCARDED
+P2-H18,2,82.97,-0.21000000000000796,failure,attention_variant,code,Sigmoid channel attention at stage 3,DISCARDED
+P2-H19,2,83.11,-0.07000000000000739,failure,depth_topology,code,Value residual for stage-3 channel attention,DISCARDED
+P2-H20,2,83.16,-0.020000000000010232,failure,attention_variant,code,Dual-scale channel attention (GAP branch,DISCARDED
+P2-H21,2,82.89,-0.29000000000000625,failure,other,code,Learned channel-pair attention prior (CHANNEL_PAIR_BIAS,DISCARDED
+P2-H22,2,83.3,0.11999999999999034,success,cross_stage,code,All-stage cross-stage fusion (add stage 0,PUSHED
+P2-H23,2,83.3,0.0,failure,cross_stage,code,Second-order statistics pooling in cross-stage fusion,DISCARDED
+P2-H24,2,83.13,-0.1700000000000017,failure,depth_topology,code,Attentive channel gating (output-side gate on stage-3 channel attention,DISCARDED
+P2-H25,2,82.82,-0.480000000000004,failure,other,code,Decoupled V projection,DISCARDED
+P2-H26,2,83.37,0.07000000000000739,success,position_encoding,code,Per-stage periodic CPE re-injection,PUSHED
+P2-H27,2,82.74,-0.6300000000000097,failure,position_encoding,code,Stage-3 CPE interval 4→3 (denser spatial refresh in deepest stage,DISCARDED
+P2-H28,2,82.8,-0.5700000000000074,failure,depth_topology,config,5×5 Q/K at stage-2 (extend stage-3 winning kernel size to stage-2,DISCARDED
+P2-H29,2,82.7,-0.6700000000000017,failure,depth_topology,code,Register tokens for stage-3 channel attention (K=4,DISCARDED
+P2-H30,2,82.51,-0.8599999999999994,failure,position_encoding,code,Stage-1 periodic CPE re-injection (interval=1,DISCARDED
+P2-H31,2,83.03,-0.3400000000000034,failure,position_encoding,code,7×7 CPE kernel,DISCARDED
+P2-H32,2,83.17,-0.20000000000000284,failure,depth_topology,config,"Depth redistribution DEPTH=[1,2,5,10]→[1,2,6,9]",DISCARDED
+Baseline-IN1K,3,77.65,0.0,baseline,baseline,baseline,ImageNet-1K baseline (IN-B100),
+H3-1,3,77.48,0.0,failure,depth_topology,code,Sparse top-k channel attention at stage-3 (k=64 of C=640,DISCARDED
+H3-2,3,77.5,0.0,failure,depth_topology,code,Dual-resolution channel attention at stage-3 (G=32 super-channel groups,DISCARDED
+H3-3,3,77.55,0.0,failure,depth_topology,config,Cross-stage channel attention bridge (stage-2 → stage-3,DISCARDED
+H3-4,3,77.38,0.0,failure,depth_topology,config,Agent attention at stage-3 (factorised low-rank CA via M=64 learnable agents,DISCARDED
+H3-5,3,77.45,0.0,failure,depth_topology,config,Hierarchical local + global CA at stage-2 (within-group fine + cross-group coarse,DISCARDED
+H3-6,3,77.59,0.0,failure,depth_topology,config,Funneling tail-block at 3×3 spatial pool (purely additive on top of stage-3,DISCARDED
+H3-8,3,62.93,0.0,failure,attention_heads,config,Linear-attention funneling tail at full stage-3 spatial (D=49) + shared-head aux,DISCARDED
+H3-9,3,77.79,0.0,success,attention_heads,config,Linformer-style projected channel attention funnel + shared-head aux,PUSHED
+H3-10,3,77.75,-0.04000000000000625,failure,depth_topology,config,Stacked Linformer-style projected channel attention funnel (depth=2,DISCARDED
+H3-11,3,77.58,-0.21000000000000796,failure,other,config,Parallel hybrid funnel,DISCARDED
+H3-12,3,77.91,0.11999999999999034,success,depth_topology,config,"Linformer applied to ALL 10 stage-3 in-trunk CA blocks (LINFORMER_R_PER_STAGE=[0,0,0,128]",PUSHED
+H3-13,3,77.65,-0.2599999999999909,failure,other,config,Push Linformer wider,DISCARDED
+H3-14,3,77.67,-0.23999999999999488,failure,depth_topology,config,Per-block Linformer rank schedule within stage-3,DISCARDED
+H3-15,3,77.54,-0.36999999999999034,failure,depth_topology,config,"Sparse top-k WITHIN the Linformer rank-128 supertoken basis at stage-3. LINFORMER_TOPK_PER_STAGE=[0,0,0,32]",DISCARDED
+H3-16,3,77.78,-0.12999999999999545,failure,training_recipe,config,"Gated parallel FULL-RANK CA pathway alongside Linformer at stage-3. LINFORMER_FULLRANK_PARALLEL_PER_STAGE=[0,0,0,1]",DISCARDED
+H3-17,3,77.74,-0.1700000000000017,failure,depth_topology,config,"Sparsemax replacement for softmax inside stage-3 Linformer. LINFORMER_SOFTMAX_TYPE_PER_STAGE=['softmax','softmax','softmax','sparsemax']",DISCARDED
+H3-18,3,77.39,-0.519999999999996,failure,depth_topology,config,"Synthesizer-Dense channel attention at stage-3 (REPLACES H3-12 Linformer). SYNTHESIZER_DENSE_PER_STAGE=[0,0,0,1]",DISCARDED
